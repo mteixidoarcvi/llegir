@@ -3,96 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aprenent a llegir</title>
+  <title>APRENEM A LLEGIR</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin-top: 50px;
+      text-transform: uppercase;
     }
     .word {
       font-size: 4rem;
       margin-bottom: 20px;
     }
-    .message {
+    .feedback {
       font-size: 1.5rem;
-      color: green;
       margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      display: inline-block;
+      min-width: 200px;
+    }
+    .success {
+      color: #006400;
+      background-color: #90EE90;
+    }
+    .error {
+      color: #8B0000;
+      background-color: #F08080;
+    }
+    button {
+      font-size: 1.2rem;
+      margin: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <h1>Aprenem a llegir</h1>
+  <h1>APRENEM A LLEGIR</h1>
   <div class="word" id="wordDisplay"></div>
-  <button id="speakButton">Parla</button>
-  <div class="message" id="message"></div>
+  
+  <div>
+    <button id="speakButton">PARLA</button>
+    <button id="stopButton" disabled>PARAR</button>
+    <button id="skipButton">SALTA</button>
+  </div>
+  
+  <div class="feedback" id="message"></div>
 
   <script>
-    // Llista de paraules
     const paraules = [
       "sol", "casa", "gos", "gat", "lluna", "arbre", "flor", "peix", "panxa", "nau"
     ];
 
-    // Elementos del DOM
     const wordDisplay = document.getElementById('wordDisplay');
     const messageDisplay = document.getElementById('message');
     const speakButton = document.getElementById('speakButton');
+    const stopButton = document.getElementById('stopButton');
+    const skipButton = document.getElementById('skipButton');
 
-    // Funció per triar una paraula aleatòria
     function triaParaula() {
       const index = Math.floor(Math.random() * paraules.length);
       return paraules[index];
     }
 
-    // Establir la paraula inicial
     let paraulaActual = triaParaula();
     wordDisplay.textContent = paraulaActual;
 
-    // Comprovem si el navegador suporta l'API de reconeixement de veu
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      messageDisplay.style.color = 'red';
-      messageDisplay.textContent = "El teu navegador no suporta el reconeixement de veu.";
+      messageDisplay.className = 'feedback error';
+      messageDisplay.textContent = "EL TEU NAVIGADOR NO SUPORTA EL RECONEIXEMENT DE VEU.";
       speakButton.disabled = true;
+      stopButton.disabled = true;
+      skipButton.disabled = true;
     } else {
       const recognizer = new SpeechRecognition();
-      recognizer.lang = 'ca-ES'; // Configura l'idioma a català
+      recognizer.lang = 'ca-ES';
+      recognizer.interimResults = false;
+      
+      let isRecording = false;
 
-      // Quan es finalitza el reconeixement
       recognizer.addEventListener('result', (event) => {
+        isRecording = false;
+        stopButton.disabled = true;
         const result = event.results[0][0].transcript.trim().toLowerCase();
         console.log("Resultat reconegut:", result);
-        // Convertim la paraula actual a minúscules per comparar
+        messageDisplay.textContent = "TRANSCRIT: " + result;
         if (result === paraulaActual.toLowerCase()) {
-          messageDisplay.textContent = "Correcte!";
-          // Tria una nova paraula després d'un petit retard
+          messageDisplay.className = 'feedback success';
+          messageDisplay.innerHTML += " &#128512;";
           setTimeout(() => {
             paraulaActual = triaParaula();
             wordDisplay.textContent = paraulaActual;
             messageDisplay.textContent = "";
+            messageDisplay.className = 'feedback';
           }, 1500);
         } else {
-          messageDisplay.style.color = 'red';
-          messageDisplay.textContent = "Intenta-ho de nou!";
-          // Opcional: es pot esborrar el missatge després d'un temps
+          messageDisplay.className = 'feedback error';
+          messageDisplay.innerHTML += " &#128577;";
           setTimeout(() => {
             messageDisplay.textContent = "";
-            messageDisplay.style.color = 'green';
+            messageDisplay.className = 'feedback';
           }, 1500);
         }
       });
 
       recognizer.addEventListener('error', (event) => {
         console.error("Error en el reconeixement:", event.error);
-        messageDisplay.style.color = 'red';
-        messageDisplay.textContent = "S'ha produït un error: " + event.error;
+        isRecording = false;
+        stopButton.disabled = true;
+        messageDisplay.className = 'feedback error';
+        messageDisplay.textContent = "S'HA PRODUÏT UN ERROR: " + event.error;
       });
 
-      // Botó per iniciar el reconeixement de veu
+      recognizer.addEventListener('end', () => {
+        isRecording = false;
+        stopButton.disabled = true;
+      });
+
       speakButton.addEventListener('click', () => {
-        messageDisplay.textContent = "Escoltant...";
-        recognizer.start();
+        if (!isRecording) {
+          messageDisplay.className = 'feedback';
+          messageDisplay.textContent = "ESCOLTANT...";
+          isRecording = true;
+          stopButton.disabled = false;
+          recognizer.start();
+        }
+      });
+
+      stopButton.addEventListener('click', () => {
+        if (isRecording) {
+          recognizer.stop();
+          isRecording = false;
+          stopButton.disabled = true;
+          messageDisplay.textContent = "GRAVACIÓ ATURADA, PROCESSANT...";
+        }
+      });
+
+      skipButton.addEventListener('click', () => {
+        if (isRecording) {
+          recognizer.stop();
+          isRecording = false;
+          stopButton.disabled = true;
+        }
+        paraulaActual = triaParaula();
+        wordDisplay.textContent = paraulaActual;
+        messageDisplay.textContent = "";
+        messageDisplay.className = 'feedback';
       });
     }
   </script>
