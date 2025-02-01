@@ -48,6 +48,7 @@
     <button id="speakButton">PARLA</button>
     <button id="stopButton" disabled>PARAR</button>
     <button id="skipButton">SALTA</button>
+    <button id="readButton">LLEGEIX</button>
   </div>
   
   <div class="feedback" id="message"></div>
@@ -62,6 +63,7 @@
     const speakButton = document.getElementById('speakButton');
     const stopButton = document.getElementById('stopButton');
     const skipButton = document.getElementById('skipButton');
+    const readButton = document.getElementById('readButton');
 
     function triaParaula() {
       const index = Math.floor(Math.random() * paraules.length);
@@ -71,6 +73,21 @@
     let paraulaActual = triaParaula();
     wordDisplay.textContent = paraulaActual;
 
+    // Funció per llegir la paraula utilitzant SpeechSynthesis
+    function llegeixParaula() {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(paraulaActual);
+        utterance.lang = 'ca-ES';
+        window.speechSynthesis.speak(utterance);
+      } else {
+        messageDisplay.className = 'feedback error';
+        messageDisplay.textContent = "EL TEU NAVIGADOR NO SUPORTA LA SINTESI DE VEU.";
+      }
+    }
+
+    // Afegim l'esdeveniment al botó LLEGEIX
+    readButton.addEventListener('click', llegeixParaula);
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       messageDisplay.className = 'feedback error';
@@ -78,6 +95,7 @@
       speakButton.disabled = true;
       stopButton.disabled = true;
       skipButton.disabled = true;
+      readButton.disabled = true;
     } else {
       const recognizer = new SpeechRecognition();
       recognizer.lang = 'ca-ES';
